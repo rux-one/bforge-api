@@ -1,11 +1,24 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
+import { SocialPostEntity } from './entities/social-post.entity';
+import { SocialPostDataDto } from './dto/social-post.dto';
 
 @Injectable()
 export class ContentService {
-  create(createContentDto: CreateContentDto) {
-    return 'This action adds a new content';
+  constructor(
+    @InjectRepository(SocialPostEntity)
+    private readonly socialPostRepository: Repository<SocialPostEntity>,
+  ) {}
+
+  async findSocialPosts() {
+    return this.socialPostRepository.find();
+  }
+
+  createSocialPost(post: SocialPostDataDto) {
+    return this.socialPostRepository.save(post);
   }
 
   findAll() {
