@@ -12,6 +12,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      DB_FILE: ./db.sqlite
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
