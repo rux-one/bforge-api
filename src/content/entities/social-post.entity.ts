@@ -17,7 +17,11 @@ export class SocialPostEntity {
   @Column({ name: 'weight', nullable: false, default: 0 })
   weight: number;
 
-  @Column({ name: 'validFrom', nullable: true })
+  @Column({
+    name: 'validFrom',
+    nullable: false,
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   validFrom: Date;
 
   @Column({ name: 'updatedAt', nullable: true })

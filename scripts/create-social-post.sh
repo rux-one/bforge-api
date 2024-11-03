@@ -1,9 +1,12 @@
 #!/bin/sh
-curl -XPOST http://localhost:3000/content/social-posts \
+ZULU_NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+clear && curl -XPOST http://localhost:3000/content/social-posts \
     -H "Content-Type: application/json" \
     -d '{
-        "name": "My test social post",
+        "name": "My earlier test social post",
         "content": "This is my first social post",
-        "imageUrl": "https://example.com/image.jpg"
-    }'
-
+        "imageUrl": "https://example.com/image.jpg",
+        "weight": 0,
+        "validFrom" : "'"$ZULU_NOW"'"
+    }' | jq

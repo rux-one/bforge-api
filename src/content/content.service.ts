@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import { SocialPostEntity } from './entities/social-post.entity';
 import { SocialPostDataDto } from './dto/social-post.dto';
 
@@ -12,7 +12,14 @@ export class ContentService {
   ) {}
 
   async findSocialPosts() {
-    return this.socialPostRepository.find();
+    return this.socialPostRepository.find({
+      order: {
+        weight: 'ASC',
+      },
+      where: {
+        validFrom: LessThan(new Date()),
+      },
+    });
   }
 
   createSocialPost(post: SocialPostDataDto) {
