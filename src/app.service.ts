@@ -10,7 +10,7 @@ export class AppService {
   }
 
   async getHealth(): Promise<string> {
-    await this.dataSource.query('SELECT 1');
+    await this.dataSource.query('SELECT 1 AS `health`');
     return 'OK';
   }
 }
