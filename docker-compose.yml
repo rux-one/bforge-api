@@ -6,13 +6,13 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - 3000:3000
+      - $PORT:3000
     volumes:
       - $DB_FILE:/usr/src/app/db.sqlite
     environment:
       NODE_ENV: production
       PORT: 3000
-      DB_FILE: ./db.sqlite
+      DB_FILE: $DB_FILE
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
