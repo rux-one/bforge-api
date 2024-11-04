@@ -6,7 +6,7 @@ export class AppService {
   constructor(private readonly dataSource: DataSource) {}
 
   getHello(): string {
-    return 'Hello World!!!';
+    return 'Hello, World.';
   }
 
   async getHealth(): Promise<string> {
