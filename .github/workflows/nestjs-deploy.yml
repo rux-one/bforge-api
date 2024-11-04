@@ -21,7 +21,7 @@ jobs:
 
       - name: Deploy using rsync
         env:
-          SRC: './dist/*'
+          SRC: './dist ./docker-compose.yml Dockerfile node_modules'
           DEST: '${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.REMOTE_PATH }}'
         run: |
           echo "${{secrets.SSH_PRIVATE_KEY}}" > deploy_key
