@@ -1,0 +1,32 @@
+name: Build and Deploy Hex.js
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy using rsync
+        env:
+          SRC: './dist/*'
+          DEST: '${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.REMOTE_PATH }}'
+        run: |
+          echo "${{secrets.SSH_PRIVATE_KEY}}" > deploy_key
+          chmod 600 ./deploy_key
+          rsync -chrlvzi --delete \
+            -e 'ssh -i ./deploy_key -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no' \
+            --exclude '/deploy_key' 'db.sqlite' \
+            ${{ env.SRC }} ${{ env.DEST }}
