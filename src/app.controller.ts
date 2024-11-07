@@ -1,6 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 
+export type HealthInfo = {
+  version: string;
+  db: string;
+};
+
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
@@ -11,7 +16,10 @@ export class AppController {
   }
 
   @Get('health')
-  async getHealth(): Promise<string> {
-    return this.appService.getHealth();
+  async getHealth(): Promise<HealthInfo> {
+    return {
+      version: await this.appService.getVersion(),
+      db: await this.appService.getHealth(),
+    };
   }
 }

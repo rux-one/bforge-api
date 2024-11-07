@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import * as packageInfo from '../package.json';
 
 @Injectable()
 export class AppService {
@@ -7,6 +8,10 @@ export class AppService {
 
   getHello(): string {
     return 'Hello, World.';
+  }
+
+  async getVersion(): Promise<string> {
+    return packageInfo.version;
   }
 
   async getHealth(): Promise<string> {
