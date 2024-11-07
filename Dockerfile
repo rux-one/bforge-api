@@ -6,4 +6,4 @@ COPY dist .
 COPY package*.json .
 COPY node_modules node_modules
 
-CMD ["node", "main.js"]
+CMD ["node", "src/main.js"]
