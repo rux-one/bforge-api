@@ -67,11 +67,9 @@ export class HedgedocService {
     }
 
     private decodeSocketIoMessage(message: string): [string | null, any[] | null] {
-        console.log('Decoding message:', message);
         if (message.startsWith('42')) {
             try {
                 const data = JSON.parse(message.slice(2));
-                console.log('Parsed message data:', JSON.stringify(data, null, 2));
                 return [data[0], data.slice(1)];
             } catch (error) {
                 console.error('Error parsing message:', error);
@@ -86,7 +84,6 @@ export class HedgedocService {
             try {
                 if (ws.readyState === WebSocket.OPEN) {
                     ws.send('2');
-                    console.log('Ping sent');
                 } else {
                     clearInterval(timer);
                 }
@@ -262,8 +259,6 @@ export class HedgedocService {
             cookies = await this.getSessionCookie();
         }
 
-        console.log('Connecting with cookies:', cookies);
-
         const headers = {
             'Pragma': 'no-cache',
             'Cache-Control': 'no-cache',
@@ -293,17 +288,13 @@ export class HedgedocService {
             });
 
             ws.on('open', () => {
-                console.log('WebSocket connection established');
-                console.log('Starting Socket.IO handshake...');
                 ws.send('40');
             });
 
             ws.on('message', async (data: Buffer) => {
                 const message = data.toString();
-                console.log('Received message:', message);
 
                 if (Date.now() - startTime > TIMEOUT) {
-                    console.log('Timeout waiting for operation acknowledgment');
                     ws.close();
                     reject(new Error('Timeout waiting for operation acknowledgment'));
                     return;
@@ -314,18 +305,14 @@ export class HedgedocService {
                 } else if (message.startsWith('0')) {
                     try {
                         const handshakeData = JSON.parse(message.slice(1));
-                        console.log('Handshake data:', handshakeData);
 
-                        console.log('Sending probe message...');
                         ws.send('2probe');
 
                         if (handshakeData.pingInterval) {
-                            console.log('Setting up ping interval...');
                             this.sendPing(ws, handshakeData.pingInterval / 1000);
                         }
 
                         const joinMessage = `42["join","${noteId}"]`;
-                        console.log('Sending join message:', joinMessage);
                         ws.send(joinMessage);
                     } catch (error) {
                         console.error('Error handling handshake:', error);
@@ -333,10 +320,8 @@ export class HedgedocService {
                     }
                 } else {
                     const [type, messageData] = this.decodeSocketIoMessage(message);
-                    console.log('Decoded message:', { type, messageData });
                     
                     if (type === 'error') {
-                        console.log('Received error:', messageData);
                         ws.close();
                         reject(new Error(`Server error: ${messageData}`));
                         return;
@@ -346,9 +331,6 @@ export class HedgedocService {
                         operationSent = true;
                         const docData = messageData[0] as DocData;
                         const retainLength = docData.str.length;
-                        console.log(`Current revision: ${docData.revision}`);
-                        console.log(`Current content length: ${retainLength}`);
-                        console.log(`Current content: "${docData.str}"`);
 
                         // Send the append operation with the correct format
                         let appendOperation;
@@ -358,7 +340,6 @@ export class HedgedocService {
                             appendOperation = ["operation", docData.revision, [retainLength, newContent], {"ranges":[{"anchor":retainLength + newContent.length,"head":retainLength + newContent.length}]}];
                         }
                         const appendMessage = `42${JSON.stringify(appendOperation)}`;
-                        console.log('Sending append operation:', appendMessage);
                         ws.send(appendMessage);
                         
                         setTimeout(() => {
@@ -371,6 +352,7 @@ export class HedgedocService {
 
             ws.on('close', () => {
                 console.log('WebSocket connection closed');
+                resolve();
             });
         });
     }
