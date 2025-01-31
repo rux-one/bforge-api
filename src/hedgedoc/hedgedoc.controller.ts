@@ -10,13 +10,24 @@ import { HedgedocNoteDto } from './dto/hedgedoc-note.dto';
 @Controller('hedgedoc')
 export class HedgedocController {
   constructor(private readonly service: HedgedocService) {}
-  
+
   @Put(':slug')
-  putNoteContent(@Body() content: HedgedocNoteDto, @Param('slug') slug: string) {
-    return {
-      status: 'test',
-      slug,
-      content,
-    };
+  async putNoteContent(@Body() content: HedgedocNoteDto, @Param('slug') slug: string) {
+    try {
+      await this.service.overrideNote(slug, content.content);
+
+      return {
+        success: true,
+        slug,
+      };
+    } catch (e) {
+      console.error(e);
+
+      return {
+        success: false,
+        slug,
+        error: e.message,
+      };
+    }
   }
 }
