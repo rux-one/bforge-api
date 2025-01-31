@@ -12,12 +12,17 @@ export class HedgedocController {
   constructor(private readonly service: HedgedocService) {}
 
   @Put(':slug')
-  async putNoteContent(@Body() content: HedgedocNoteDto, @Param('slug') slug: string) {
+  async putNoteContent(@Body() payload: HedgedocNoteDto, @Param('slug') slug: string) {
     try {
-      await this.service.overrideNote(slug, content.content);
+      if (payload.append) {
+        await this.service.appendNote(slug, payload.content);
+      } else {
+        await this.service.overrideNote(slug, payload.content);
+      }
 
       return {
         success: true,
+        append: payload.append,
         slug,
       };
     } catch (e) {
@@ -25,6 +30,7 @@ export class HedgedocController {
 
       return {
         success: false,
+        append: payload.append,
         slug,
         error: e.message,
       };

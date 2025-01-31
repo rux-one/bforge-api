@@ -251,6 +251,130 @@ export class HedgedocService {
         });
     }
 
+    async appendNote(
+        noteId: string,
+        newContent: string,
+        cookies?: SessionCookies
+    ): Promise<void> {
+        const websocketUrl = `wss://${this.server}/socket.io/?noteId=${noteId}&EIO=3&transport=websocket`;
+        
+        if (!cookies) {
+            cookies = await this.getSessionCookie();
+        }
+
+        console.log('Connecting with cookies:', cookies);
+
+        const headers = {
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+            'Origin': `https://${this.server}`,
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+            'Cookie': Object.entries(cookies)
+                .filter(([_, v]) => v)
+                .map(([k, v]) => `${k}=${v}`)
+                .join('; '),
+        };
+
+        return new Promise((resolve, reject) => {
+            console.log('Opening WebSocket connection to:', websocketUrl);
+            const ws = new WebSocket(websocketUrl, { 
+                headers,
+                perMessageDeflate: false
+            });
+
+            const startTime = Date.now();
+            const TIMEOUT = 15000;
+            let operationSent = false;
+
+            ws.on('error', (error) => {
+                console.error('WebSocket error:', error);
+                reject(error);
+            });
+
+            ws.on('open', () => {
+                console.log('WebSocket connection established');
+                console.log('Starting Socket.IO handshake...');
+                ws.send('40');
+            });
+
+            ws.on('message', async (data: Buffer) => {
+                const message = data.toString();
+                console.log('Received message:', message);
+
+                if (Date.now() - startTime > TIMEOUT) {
+                    console.log('Timeout waiting for operation acknowledgment');
+                    ws.close();
+                    reject(new Error('Timeout waiting for operation acknowledgment'));
+                    return;
+                }
+
+                if (message.startsWith('40')) {
+                    // Handshake acknowledgment, do nothing
+                } else if (message.startsWith('0')) {
+                    try {
+                        const handshakeData = JSON.parse(message.slice(1));
+                        console.log('Handshake data:', handshakeData);
+
+                        console.log('Sending probe message...');
+                        ws.send('2probe');
+
+                        if (handshakeData.pingInterval) {
+                            console.log('Setting up ping interval...');
+                            this.sendPing(ws, handshakeData.pingInterval / 1000);
+                        }
+
+                        const joinMessage = `42["join","${noteId}"]`;
+                        console.log('Sending join message:', joinMessage);
+                        ws.send(joinMessage);
+                    } catch (error) {
+                        console.error('Error handling handshake:', error);
+                        reject(error);
+                    }
+                } else {
+                    const [type, messageData] = this.decodeSocketIoMessage(message);
+                    console.log('Decoded message:', { type, messageData });
+                    
+                    if (type === 'error') {
+                        console.log('Received error:', messageData);
+                        ws.close();
+                        reject(new Error(`Server error: ${messageData}`));
+                        return;
+                    }
+
+                    if (type === 'doc' && messageData && !operationSent) {
+                        operationSent = true;
+                        const docData = messageData[0] as DocData;
+                        const retainLength = docData.str.length;
+                        console.log(`Current revision: ${docData.revision}`);
+                        console.log(`Current content length: ${retainLength}`);
+                        console.log(`Current content: "${docData.str}"`);
+
+                        // Send the append operation with the correct format
+                        let appendOperation;
+                        if (retainLength === 0) {
+                            appendOperation = ["operation", docData.revision, [newContent], {"ranges":[{"anchor":newContent.length,"head":newContent.length}]}];
+                        } else {
+                            appendOperation = ["operation", docData.revision, [retainLength, newContent], {"ranges":[{"anchor":retainLength + newContent.length,"head":retainLength + newContent.length}]}];
+                        }
+                        const appendMessage = `42${JSON.stringify(appendOperation)}`;
+                        console.log('Sending append operation:', appendMessage);
+                        ws.send(appendMessage);
+                        
+                        setTimeout(() => {
+                            ws.close();
+                            resolve();
+                        }, 1000);
+                    }
+                }
+            });
+
+            ws.on('close', () => {
+                console.log('WebSocket connection closed');
+            });
+        });
+    }
+
     getHello(): string {
         return 'Hello, Hedgedoc!';
     }
