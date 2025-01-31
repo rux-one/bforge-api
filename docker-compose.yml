@@ -13,6 +13,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       DB_FILE: $DB_FILE
+      HEDGEDOC_SERVER: $HEDGEDOC_SERVER
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
